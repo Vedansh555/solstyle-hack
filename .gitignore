@@ -1,0 +1,10 @@
+node_modules/
+target/
+dist/
+.env
+.DS_Store
+npm-debug.log
+/.anchor
+/.next
+*.keypair
+*.pem
