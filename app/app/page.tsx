@@ -196,7 +196,7 @@ export default function Home() {
         .signers([mintKeypair]) 
         .rpc();
 
-      // --- SAVE ORDER TO HISTORY ---
+      // SUCCESS! SAVE ORDER
       const newOrder = {
         id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
         tracking: "TRK-" + Math.floor(100000 + Math.random() * 900000),
@@ -232,16 +232,16 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center p-8 bg-[#0a0a0a] text-white font-sans selection:bg-purple-500 selection:text-white relative">
       
       {/* NAVBAR */}
-      <div className="z-10 w-full max-w-6xl items-center justify-between flex mb-12 border-b border-gray-800 pb-6">
+      <div className="z-10 w-full max-w-6xl items-center justify-between flex flex-wrap gap-4 mb-12 border-b border-gray-800 pb-6">
         <h1 onClick={resetApp} className="text-3xl font-extrabold tracking-tighter cursor-pointer hover:opacity-80 transition-opacity">
           SolStyle
         </h1>
         
         <div className="flex items-center gap-4">
-            {/* MY ORDERS BUTTON */}
+            {/* --- MY ORDERS BUTTON (Visible Now!) --- */}
             <button 
                 onClick={() => setViewState("ORDERS_VIEW")}
-                className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-purple-500/50 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg shadow-purple-900/10"
             >
                 <span>📦</span> My Orders ({orders.length})
             </button>
@@ -301,8 +301,15 @@ export default function Home() {
               <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 className="text-4xl font-extrabold text-white mb-2">Order Placed!</h2>
-            <p className="text-gray-400 text-sm mb-8">NFT Minted. Shipping details received.</p>
+            <p className="text-gray-400 text-sm mb-8">Payment confirmed. Your outfit is being prepared.</p>
             
+            <div className="bg-[#1a1a1a] rounded-xl p-6 text-left mb-8 border border-gray-800 space-y-4">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Tracking Number</p>
+                <p className="font-mono text-purple-400 text-lg">TRK-Processing...</p>
+              </div>
+            </div>
+
             <button onClick={() => setViewState("ORDERS_VIEW")} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-all text-lg mb-3">
               Track Order
             </button>
