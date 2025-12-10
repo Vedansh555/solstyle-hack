@@ -1,10 +1,13 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
-use mpl_token_metadata::state::Creator;
-use anchor_lang::solana_program::{program::invoke_signed, sysvar::rent::Rent};
+use anchor_spl::token::{self, Mint, Token, TokenAccount};
+use anchor_spl::metadata::{
+    create_metadata_accounts_v3,
+    CreateMetadataAccountsV3,
+    mpl_token_metadata::types::{Creator, DataV2},
+    Metadata,
+};
 
-
-declare_id!("8ZRrkfYETaq36m1rcrnMgjEUZobzXBkpMyiTbvkCP5QG"); // Replace with your final Program ID after deploy
+declare_id!("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
 #[program]
 pub mod solstyle_program {
@@ -17,7 +20,6 @@ pub mod solstyle_program {
         metadata_uri: String,
     ) -> Result<()> {
         let drop = &mut ctx.accounts.drop;
-
         require!(commission_bps <= 10000, ErrorCode::InvalidCommissionBps);
 
         drop.seller = ctx.accounts.seller.key();
@@ -27,116 +29,107 @@ pub mod solstyle_program {
 
         Ok(())
     }
-    
-    
+
     pub fn buy_drop(
         ctx: Context<BuyDrop>,
-        amount_lamports: u64, 
+        amount_lamports: u64,
     ) -> Result<()> {
         let drop = &ctx.accounts.drop;
-        let commission_bps = drop.commission_bps;
-
         
         require_eq!(amount_lamports, drop.price, ErrorCode::IncorrectPaymentAmount);
 
-        let commission_lamports = (amount_lamports * commission_bps as u64) / 10000;
+        let commission_lamports = (amount_lamports * drop.commission_bps as u64) / 10000;
         let seller_lamports = amount_lamports.checked_sub(commission_lamports).unwrap();
 
-        
-        // 1. Transfer SOL to the Seller
-        anchor_lang::system_program::transfer(
-            CpiContext::new(
-                ctx.accounts.system_program.to_account_info(),
-                anchor_lang::system_program::Transfer {
-                    from: ctx.accounts.buyer.to_account_info(),
-                    to: ctx.accounts.seller.to_account_info(),
-                },
-            ),
+        // 1. Transfer SOL to Seller
+        let ix_seller = anchor_lang::solana_program::system_instruction::transfer(
+            &ctx.accounts.buyer.key(),
+            &ctx.accounts.seller.key(),
             seller_lamports,
-        )?;
-
-        // 2. Transfer SOL to the Commission Address
-        anchor_lang::system_program::transfer(
-            CpiContext::new(
+        );
+        anchor_lang::solana_program::program::invoke(
+            &ix_seller,
+            &[
+                ctx.accounts.buyer.to_account_info(),
+                ctx.accounts.seller.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
-                anchor_lang::system_program::Transfer {
-                    from: ctx.accounts.buyer.to_account_info(),
-                    to: ctx.accounts.commission_recipient.to_account_info(),
-                },
-            ),
-            commission_lamports,
+            ],
         )?;
 
-        
-        // FIX: Get the bump seed from the context.bumps map (required when PDA is AccountInfo)
-        let bump_seed = *ctx.bumps.get("pda_authority").unwrap();
-        let signer_seeds: &[&[u8]; 2] = &[
-            b"authority",
-            &[bump_seed], 
-        ];
-        let signer_seeds_slice: &[&[&u8]] = &[&signer_seeds];
+        // 2. Transfer SOL to Commission
+        let ix_comm = anchor_lang::solana_program::system_instruction::transfer(
+            &ctx.accounts.buyer.key(),
+            &ctx.accounts.commission_recipient.to_account_info().key(),
+            commission_lamports,
+        );
+        anchor_lang::solana_program::program::invoke(
+            &ix_comm,
+            &[
+                ctx.accounts.buyer.to_account_info(),
+                ctx.accounts.commission_recipient.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
 
+        // 3. Mint NFT
+        // FIX: Direct field access is the correct way in Anchor 0.29.0
+        let bump = ctx.bumps.pda_authority; 
+        let signer_seeds: &[&[u8]] = &[b"authority", &[bump]];
+        let signer_seeds_slice: &[&[&[u8]]] = &[signer_seeds];
 
-        // 3. Action: Mint the 1 token NFT to the Buyer's Token Account
         token::mint_to(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
                 token::MintTo {
                     mint: ctx.accounts.mint.to_account_info(),
                     to: ctx.accounts.buyer_token_account.to_account_info(),
-                    authority: ctx.accounts.pda_authority.to_account_info(), // Signed by PDA
+                    authority: ctx.accounts.pda_authority.to_account_info(),
                 },
                 signer_seeds_slice,
             ),
-            1, // Mint exactly 1 token (NFT supply)
+            1,
         )?;
 
-        
-        // 4. Action: Create the Metaplex Metadata Account
+        // 4. Create Metadata
         let creators = vec![
             Creator {
                 address: ctx.accounts.pda_authority.key(),
                 verified: true,
-                share: 100, // PDA owns 100% of the primary share
+                share: 100,
             },
         ];
 
-        // CPI Call to Metaplex
-        let instruction = mpl_token_metadata::instruction::create_metadata_accounts_v3(
-            ctx.accounts.token_metadata_program.key(),
-            ctx.accounts.metadata_account.key(),
-            ctx.accounts.mint.key(),
-            ctx.accounts.pda_authority.key(), // Mint authority
-            ctx.accounts.buyer.key(),         // Payer
-            ctx.accounts.pda_authority.key(), // Update authority
-            String::from("SolStyle Fit"),     // NFT Name
-            String::from("SOLSTYL"),          // NFT Symbol
-            drop.metadata_uri.clone(),        // Metadata URI (from the Drop account)
-            Some(creators),
-            0,
-            true, // Is mutable
-            false, // Uses standard token
-            None,
-            None,
-            None,
+        let data_v2 = DataV2 {
+            name: String::from("SolStyle Fit"),
+            symbol: String::from("SOLSTYL"),
+            uri: drop.metadata_uri.clone(),
+            seller_fee_basis_points: 0,
+            creators: Some(creators),
+            collection: None,
+            uses: None,
+        };
+
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            CreateMetadataAccountsV3 {
+                metadata: ctx.accounts.metadata_account.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                mint_authority: ctx.accounts.pda_authority.to_account_info(),
+                payer: ctx.accounts.buyer.to_account_info(),
+                update_authority: ctx.accounts.pda_authority.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+            },
+            signer_seeds_slice,
         );
 
-        // Invoke the Metaplex instruction with the PDA signature
-        invoke_signed(
-            &instruction,
-            &[
-                ctx.accounts.metadata_account.to_account_info(),
-                ctx.accounts.mint.to_account_info(),
-                ctx.accounts.pda_authority.to_account_info(),
-                ctx.accounts.buyer.to_account_info(),
-                ctx.accounts.token_metadata_program.to_account_info(),
-                ctx.accounts.token_program.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-                ctx.accounts.rent.to_account_info(),
-            ],
-            signer_seeds_slice, // Use the corrected signer seeds
+        create_metadata_accounts_v3(
+            cpi_ctx,
+            data_v2,
+            true, 
+            true, 
+            None,
         )?;
-
 
         Ok(())
     }
@@ -150,56 +143,45 @@ pub struct CreateDrop<'info> {
         space = 8 + Drop::INIT_SPACE
     )]
     pub drop: Account<'info, Drop>,
-
     #[account(mut)]
     pub seller: Signer<'info>,
-
     pub system_program: Program<'info, System>,
 }
 
-
-#[derive(Accounts, Bumps)] 
-pub struct BuyDrop<'info>{
-    // Existing Accounts
-    #[account(
-        has_one = seller,
-        mut
-    )]
+#[derive(Accounts)]
+pub struct BuyDrop<'info> {
+    #[account(has_one = seller, mut)]
     pub drop: Account<'info, Drop>,
     #[account(mut)]
     pub buyer: Signer<'info>,
     #[account(mut)]
-    /// CHECK: The seller key is verified via the drop.has_one check above.
+    /// CHECK: Verified via has_one
     pub seller: AccountInfo<'info>,
     #[account(mut)]
-    /// CHECK: This is a fixed, known platform wallet for receiving commissions.
+    /// CHECK: Known wallet
     pub commission_recipient: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 
-    
     #[account(
         init,
         payer = buyer,
-        mint::decimals = 0,             // NFTs must have 0 decimals
-        mint::authority = pda_authority // Minting authority is set to the Program PDA
+        mint::decimals = 0,
+        mint::authority = pda_authority
     )]
     pub mint: Account<'info, Mint>,
 
-    
     #[account(
-        init_if_needed, // Requires feature 'init-if-needed'
+        init, 
         payer = buyer,
-        token::mint = mint,
-        token::authority = buyer,
+        associated_token::mint = mint,
+        associated_token::authority = buyer,
     )]
     pub buyer_token_account: Account<'info, TokenAccount>,
 
-    
-    /// CHECK: This PDA is used as the minting authority, validated by Anchor.
     #[account(seeds = [b"authority"], bump)]
+    /// CHECK: PDA signer
     pub pda_authority: AccountInfo<'info>,
-    
-    /// CHECK: Handled by Metaplex CPI
+
     #[account(
         mut,
         seeds = [
@@ -210,13 +192,13 @@ pub struct BuyDrop<'info>{
         bump,
         seeds::program = token_metadata_program.key()
     )]
+    /// CHECK: Metaplex
     pub metadata_account: AccountInfo<'info>,
 
-    
     pub rent: Sysvar<'info, Rent>,
     pub token_program: Program<'info, Token>,
-    /// CHECK: We are only using this account to reference the Metadata Program ID.
-    pub token_metadata_program: AccountInfo<'info>,
+    pub associated_token_program: Program<'info, anchor_spl::associated_token::AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
 }
 
 #[account]
@@ -228,11 +210,7 @@ pub struct Drop {
 }
 
 impl Drop {
-    pub const INIT_SPACE: usize =
-        32 + // seller pubkey
-        8 +  // price
-        2 +  // commission_bps
-        4 + 200; // metadata uri (max 200 chars)
+    pub const INIT_SPACE: usize = 32 + 8 + 2 + 4 + 200;
 }
 
 #[error_code]

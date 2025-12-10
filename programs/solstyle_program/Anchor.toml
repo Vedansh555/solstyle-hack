@@ -1,9 +1,11 @@
 [toolchain]
-package_manager = "yarn"
 
 [features]
 resolution = true
 skip-lint = false
+
+[programs.devnet]
+solstyle_program = "3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6"
 
 [programs.localnet]
 solstyle_program = "8ZRrkfYETaq36m1rcrnMgjEUZobzXBkpMyiTbvkCP5QG"
@@ -12,8 +14,11 @@ solstyle_program = "8ZRrkfYETaq36m1rcrnMgjEUZobzXBkpMyiTbvkCP5QG"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
+
+[workspace]
+members = ["."]
 
 [scripts]
 test = "yarn run mocha -t 1000000 tests/"

@@ -10,45 +10,30 @@ name = "solstyle_program"
 
 [features]
 default = []
-# FIX 1: Enable required features for Bumps and init_if_needed
-cpi = ["anchor-spl"]
+cpi = ["no-entrypoint"]
+no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
-idl-build = ["anchor-lang/idl-build"]
-anchor-debug = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 custom-heap = []
 custom-panic = []
 
-
 [dependencies]
-# FIX 2: Explicitly enable required features for Bumps and init_if-needed (0.32.1)
-anchor-lang = { version = "0.32.1", features = ["init-if-needed", "bumps"] } 
-anchor-spl = { version = "0.32.1", optional = true }
+# 1. Anchor 0.29.0
+anchor-lang = "0.29.0"
 
-# FIX 3: Explicitly add necessary Solana dependencies (v1.18.0)
-solana-program = "1.18.0"
-solana-program-test = "1.18.0"
-solana-instruction = "2.3.3" # Added to help resolve instruction conflict
+# 2. Anchor SPL
+anchor-spl = { version = "0.29.0", features = ["metadata", "associated_token"] }
 
-# FIX 4: Token and Metadata dependencies
-spl-token = "4.0.0" 
-mpl-token-metadata = "3.2.0" 
+# 3. Standard Libraries
+spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
 
+# 4. SOLANA VERSION (The One That Works)
+# We must use 1.18.17 to match spl-token-2022 v0.9.0 (which Anchor uses internally)
+solana-program = "1.18.17"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
 
-# FIX 5: Enable Security Checks
 [profile.release]
 overflow-checks = true
-
-
-# FIX 6: Dependency Override (Patch)
-# This forces Cargo to use known compatible versions for the token libraries.
-[patch.crates-io]
-solana-program = { version = "1.18.0" }
-solana-sdk = { version = "1.18.0" }
-solana-instruction = { version = "2.3.3" } 
-
-spl-token = { git = "https://github.com/solana-labs/solana-program-library", rev = "b3286f093126be15147af4c6e93822d699704e6c", features = ["no-entrypoint"] }
-mpl-token-metadata = { git = "https://github.com/metaplex-foundation/mpl-token-metadata", tag = "v3.2.0" }
