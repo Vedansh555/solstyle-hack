@@ -8,15 +8,32 @@ import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import idl from "@/utils/idl.json";
 
-// REPLACE THIS WITH YOUR PROGRAM ID
+// --- CONFIGURATION ---
+// Your Deployed Devnet Program ID
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
+
+// Your 8 AI Fashion Images (IPFS CIDs)
+const AI_IMAGES = [
+  "https://gateway.pinata.cloud/ipfs/bafybeib7apvwnakha5wis6yqh6o4uim2xbp6fwqszseqagyrtetslppeoy",
+  "https://gateway.pinata.cloud/ipfs/bafybeic5izleelncfnz76wcqcuc7tyuv4mdduspcxzfucms4hnurcguafu",
+  "https://gateway.pinata.cloud/ipfs/bafybeia5jga4u2dfe5fcplshpzrlwcaqnmbbc76ec2bvfbbssytcadp75y",
+  "https://gateway.pinata.cloud/ipfs/bafybeih54oijwpop5mcu2skwonv2eq45qzgfrjfjqvkv3bit3lclr52liu",
+  "https://gateway.pinata.cloud/ipfs/bafybeie7elxzgccb6nyxbajdemduaqaqpwhjqya45fxqxmp7c5vhzswkry",
+  "https://gateway.pinata.cloud/ipfs/bafybeidoe2b3wwnk2geyemexyw2oexsnalq47xbjf5uw6ezfk75mraiilm",
+  "https://gateway.pinata.cloud/ipfs/bafybeidlicbhvhzlacvmas5ddsgqyqplhoo6mmooeunafvboamtbs3ggsa",
+  "https://gateway.pinata.cloud/ipfs/bafybeiaovpznfolrtyltyg4k5xnceuqpu5rikijn7wo26opzdq26lxu2dq"
+];
 
 export default function Home() {
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
+  
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [dropAddress, setDropAddress] = useState<string>("");
+  
+  // State to hold the selected image for the current drop
+  const [currentImage, setCurrentImage] = useState<string>(""); 
 
   const getProgram = () => {
     if (!wallet) return null;
@@ -32,14 +49,24 @@ export default function Home() {
 
     try {
       setLoading(true);
-      setStatus("Creating Drop...");
+      setStatus("🤖 AI Agent Generating Outfit...");
+      
+      // 1. Simulate AI Generation Delay (2 seconds for effect)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 2. Randomly select one of your 8 images
+      const randomImage = AI_IMAGES[Math.floor(Math.random() * AI_IMAGES.length)];
+      setCurrentImage(randomImage);
+      
+      setStatus("✨ Minting Drop on Solana...");
+
+      // 3. Create the Drop on-chain
       const dropAccount = web3.Keypair.generate();
       const price = new BN(100000000); // 0.1 SOL
       const commission = 500; // 5%
-      const uri = "https://ipfs.io/ipfs/QmExample"; 
-
+      
       await program.methods
-        .createDrop(price, commission, uri)
+        .createDrop(price, commission, randomImage) // We save the specific image URL to the chain!
         .accounts({
           drop: dropAccount.publicKey,
           seller: wallet.publicKey,
@@ -48,8 +75,9 @@ export default function Home() {
         .signers([dropAccount])
         .rpc();
 
-      setStatus(`Drop Created! Address: ${dropAccount.publicKey.toString()}`);
+      setStatus(`✅ Drop Live! Address: ${dropAccount.publicKey.toString().slice(0, 6)}...`);
       setDropAddress(dropAccount.publicKey.toString()); 
+
     } catch (err: any) {
       console.error(err);
       setStatus("Failed: " + err.toString());
@@ -65,9 +93,9 @@ export default function Home() {
 
     try {
       setLoading(true);
-      setStatus("Buying...");
+      setStatus("🛍️ Processing Micro-payment...");
+
       const dropPubkey = new PublicKey(dropAddress);
-      // Fetch Drop Data
       // @ts-ignore
       const dropAccountData = await program.account.drop.fetch(dropPubkey);
       const sellerPubkey = dropAccountData.seller;
@@ -116,7 +144,7 @@ export default function Home() {
         .signers([mintKeypair]) 
         .rpc();
 
-      setStatus("SUCCESS! NFT Minted.");
+      setStatus("🎉 SUCCESS! You own this AI Fashion NFT.");
     } catch (err: any) {
       console.error(err);
       setStatus("Failed: " + err.toString());
@@ -126,36 +154,64 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-white">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm flex mb-10">
-        <h1 className="text-4xl font-bold text-purple-500">SolStyle</h1>
-        <WalletMultiButton />
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gray-950 text-white font-sans">
+      <div className="z-10 w-full max-w-5xl items-center justify-between flex mb-12">
+        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 tracking-tighter">
+          SolStyle
+        </h1>
+        <WalletMultiButton style={{ backgroundColor: '#9333ea' }} />
       </div>
 
-      <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 w-[400px] flex flex-col gap-4">
-        <h2 className="text-xl font-bold">👟 AI Fashion Drop</h2>
-        <div className="h-40 bg-gray-700 rounded flex items-center justify-center text-gray-500">
-          [Image Placeholder]
+      <div className="bg-gray-900 p-8 rounded-3xl border border-gray-800 w-full max-w-md shadow-2xl flex flex-col gap-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-white">✨ Zaara's Latest Drop</h2>
+          <span className="bg-purple-900 text-purple-200 text-xs px-3 py-1 rounded-full font-medium">LIVE</span>
         </div>
-        <p className="text-purple-400 font-bold">Price: 0.1 SOL</p>
 
-        <button 
-          onClick={createDrop} 
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold"
-        >
-          1. Create Drop
-        </button>
+        {/* IMAGE CONTAINER */}
+        <div className="aspect-square bg-gray-800 rounded-2xl overflow-hidden relative border border-gray-700 group">
+          {currentImage ? (
+            <img 
+              src={currentImage} 
+              alt="AI Fashion" 
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
+              <span className="text-4xl animate-bounce">🤖</span>
+              <p className="text-sm font-mono">Waiting for AI Generation...</p>
+            </div>
+          )}
+        </div>
 
-        <button 
-          onClick={buyDrop} 
-          disabled={loading || !dropAddress}
-          className="bg-pink-600 hover:bg-pink-700 p-3 rounded font-bold disabled:opacity-50"
-        >
-          2. Buy Drop
-        </button>
+        <div className="flex justify-between items-center border-b border-gray-800 pb-4">
+          <span className="text-gray-400">Price</span>
+          <span className="text-2xl font-bold text-white">0.1 SOL</span>
+        </div>
 
-        {status && <div className="bg-black p-2 rounded text-xs text-yellow-300 break-all">{status}</div>}
+        <div className="flex flex-col gap-3">
+          <button 
+            onClick={createDrop} 
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Processing..." : "1. Generate & Drop (Admin)"}
+          </button>
+
+          <button 
+            onClick={buyDrop} 
+            disabled={loading || !dropAddress}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 rounded-xl font-bold transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-900/20"
+          >
+            2. Buy Now
+          </button>
+        </div>
+
+        {status && (
+          <div className="mt-2 p-3 bg-gray-950 border border-gray-800 rounded-lg text-sm text-center text-green-400 font-mono">
+            {status}
+          </div>
+        )}
       </div>
     </main>
   );
