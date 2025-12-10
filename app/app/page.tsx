@@ -12,10 +12,10 @@ import idl from "@/utils/idl.json";
 // Your Deployed Devnet Program ID
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
-// Your 8 AI Fashion Images (IPFS CIDs)
+// Your AI Fashion Images (OUTFIT 2 REMOVED)
 const AI_IMAGES = [
   "https://gateway.pinata.cloud/ipfs/bafybeib7apvwnakha5wis6yqh6o4uim2xbp6fwqszseqagyrtetslppeoy",
-  "https://gateway.pinata.cloud/ipfs/bafybeic5izleelncfnz76wcqcuc7tyuv4mdduspcxzfucms4hnurcguafu",
+  // Outfit 2 removed
   "https://gateway.pinata.cloud/ipfs/bafybeia5jga4u2dfe5fcplshpzrlwcaqnmbbc76ec2bvfbbssytcadp75y",
   "https://gateway.pinata.cloud/ipfs/bafybeih54oijwpop5mcu2skwonv2eq45qzgfrjfjqvkv3bit3lclr52liu",
   "https://gateway.pinata.cloud/ipfs/bafybeie7elxzgccb6nyxbajdemduaqaqpwhjqya45fxqxmp7c5vhzswkry",
@@ -54,7 +54,7 @@ export default function Home() {
       // 1. Simulate AI Generation Delay (2 seconds for effect)
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 2. Randomly select one of your 8 images
+      // 2. Randomly select one of your images
       const randomImage = AI_IMAGES[Math.floor(Math.random() * AI_IMAGES.length)];
       setCurrentImage(randomImage);
       
@@ -66,7 +66,7 @@ export default function Home() {
       const commission = 500; // 5%
       
       await program.methods
-        .createDrop(price, commission, randomImage) // We save the specific image URL to the chain!
+        .createDrop(price, commission, randomImage) 
         .accounts({
           drop: dropAccount.publicKey,
           seller: wallet.publicKey,
@@ -168,8 +168,8 @@ export default function Home() {
           <span className="bg-purple-900 text-purple-200 text-xs px-3 py-1 rounded-full font-medium">LIVE</span>
         </div>
 
-        {/* IMAGE CONTAINER - FIXED FIT & ZOOM */}
-        <div className="aspect-square bg-gray-950 rounded-2xl overflow-hidden relative border border-gray-700 group flex items-center justify-center">
+        {/* IMAGE CONTAINER - CHANGED TO 3:4 PORTRAIT RATIO */}
+        <div className="aspect-[3/4] bg-gray-950 rounded-2xl overflow-hidden relative border border-gray-700 group flex items-center justify-center">
           {currentImage ? (
             <a 
               href={currentImage} 
@@ -180,52 +180,7 @@ export default function Home() {
               <img 
                 src={currentImage} 
                 alt="AI Fashion" 
+                // object-contain ensures the whole image fits without cropping
                 className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
               />
-              {/* "Click to Zoom" Hint Overlay */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                <span className="text-white font-mono text-sm bg-black/80 px-3 py-1 rounded-full">
-                  ↗ Click to Zoom
-                </span>
-              </div>
-            </a>
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
-              <span className="text-4xl animate-bounce">🤖</span>
-              <p className="text-sm font-mono">Waiting for AI Generation...</p>
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-between items-center border-b border-gray-800 pb-4">
-          <span className="text-gray-400">Price</span>
-          <span className="text-2xl font-bold text-white">0.1 SOL</span>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <button 
-            onClick={createDrop} 
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Processing..." : "1. Generate & Drop (Admin)"}
-          </button>
-
-          <button 
-            onClick={buyDrop} 
-            disabled={loading || !dropAddress}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 rounded-xl font-bold transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-900/20"
-          >
-            2. Buy Now
-          </button>
-        </div>
-
-        {status && (
-          <div className="mt-2 p-3 bg-gray-950 border border-gray-800 rounded-lg text-sm text-center text-green-400 font-mono">
-            {status}
-          </div>
-        )}
-      </div>
-    </main>
-  );
-}
+              {
