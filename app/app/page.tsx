@@ -168,14 +168,27 @@ export default function Home() {
           <span className="bg-purple-900 text-purple-200 text-xs px-3 py-1 rounded-full font-medium">LIVE</span>
         </div>
 
-        {/* IMAGE CONTAINER */}
-        <div className="aspect-square bg-gray-800 rounded-2xl overflow-hidden relative border border-gray-700 group">
+        {/* IMAGE CONTAINER - FIXED FIT & ZOOM */}
+        <div className="aspect-square bg-gray-950 rounded-2xl overflow-hidden relative border border-gray-700 group flex items-center justify-center">
           {currentImage ? (
-            <img 
-              src={currentImage} 
-              alt="AI Fashion" 
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-            />
+            <a 
+              href={currentImage} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full h-full flex items-center justify-center cursor-zoom-in"
+            >
+              <img 
+                src={currentImage} 
+                alt="AI Fashion" 
+                className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+              />
+              {/* "Click to Zoom" Hint Overlay */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                <span className="text-white font-mono text-sm bg-black/80 px-3 py-1 rounded-full">
+                  ↗ Click to Zoom
+                </span>
+              </div>
+            </a>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
               <span className="text-4xl animate-bounce">🤖</span>
