@@ -11,7 +11,7 @@ import idl from "@/utils/idl.json";
 // --- CONFIGURATION ---
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
-// --- INFLUENCER DATA (Mapped correctly) ---
+// --- INFLUENCER DATA ---
 const INFLUENCERS = [
   {
     id: "kylie",
@@ -212,14 +212,14 @@ export default function Home() {
         // --- VIEW 1: INFLUENCER SELECTION ---
         <div className="w-full max-w-6xl flex flex-col gap-10 animate-fade-in">
           <div className="text-center space-y-4">
-            <h2 className="text-5xl font-bold tracking-tight">Select Curator</h2>
+            <h2 className="text-5xl font-bold tracking-tight">Select Influencer</h2>
             <p className="text-gray-400 text-lg">Choose a personality to generate your next exclusive drop.</p>
             
             {/* SEARCH BAR */}
             <div className="max-w-xl mx-auto relative pt-4">
               <input 
                 type="text" 
-                placeholder="Search curators..."
+                placeholder="Search influencers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-[#141414] border border-gray-800 rounded-xl py-4 px-6 text-white focus:outline-none focus:border-purple-500 transition-colors placeholder-gray-600"
@@ -265,7 +265,7 @@ export default function Home() {
             onClick={() => { setSelectedInfluencer(null); setDropAddress(""); setCurrentImage(""); setStatus(""); }}
             className="text-gray-500 hover:text-white flex items-center gap-2 mb-2 text-sm transition-colors"
           >
-            ← Back to Curators
+            ← Back to Influencers
           </button>
 
           <div className="bg-[#111] p-6 rounded-3xl border border-gray-800 shadow-2xl flex flex-col gap-5">
