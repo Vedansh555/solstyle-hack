@@ -69,13 +69,23 @@ export default function Home() {
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
   
-  // State for Navigation & Logic
+  // Logic State
   const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [dropAddress, setDropAddress] = useState<string>("");
-  const [currentImage, setCurrentImage] = useState<string>(""); 
+  const [currentImage, setCurrentImage] = useState<string>("");
+  
+  // UI State
+  const [showShippingModal, setShowShippingModal] = useState(false);
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  const [shippingDetails, setShippingDetails] = useState({
+    name: "",
+    address: "",
+    city: "",
+    zip: ""
+  });
 
   const getProgram = () => {
     if (!wallet) return null;
@@ -98,10 +108,8 @@ export default function Home() {
       setLoading(true);
       setStatus("Curating Style...");
       
-      // Simulate generation delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Pick a random outfit specifically from the SELECTED influencer
       const outfits = selectedInfluencer.outfits;
       const randomImage = outfits[Math.floor(Math.random() * outfits.length)];
       setCurrentImage(randomImage);
@@ -133,8 +141,16 @@ export default function Home() {
     }
   };
 
-  const buyDrop = async () => {
+  // Step 1: Open Shipping Form
+  const handleBuyClick = () => {
     if (!wallet || !dropAddress) return alert("Generate a drop first");
+    setShowShippingModal(true);
+  };
+
+  // Step 2: Execute Purchase
+  const confirmPurchase = async () => {
+    if (!shippingDetails.name || !shippingDetails.address) return alert("Please fill details");
+    
     const program = getProgram();
     if (!program) return;
 
@@ -186,7 +202,10 @@ export default function Home() {
         .signers([mintKeypair]) 
         .rpc();
 
-      setStatus("Purchase Successful. NFT added to wallet.");
+      setStatus("Purchase Successful.");
+      setShowShippingModal(false);
+      setShowSuccessScreen(true); // Show Success Screen
+
     } catch (err: any) {
       console.error(err);
       setStatus("Transaction Failed");
@@ -195,81 +214,104 @@ export default function Home() {
     }
   };
 
+  // Reset Everything
+  const resetApp = () => {
+    setSelectedInfluencer(null);
+    setDropAddress("");
+    setCurrentImage("");
+    setStatus("");
+    setShowSuccessScreen(false);
+    setShippingDetails({ name: "", address: "", city: "", zip: "" });
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center p-8 bg-[#0a0a0a] text-white font-sans selection:bg-purple-500 selection:text-white">
       {/* NAVBAR */}
       <div className="z-10 w-full max-w-6xl items-center justify-between flex mb-12 border-b border-gray-800 pb-6">
-        <h1 
-          onClick={() => { setSelectedInfluencer(null); setDropAddress(""); setCurrentImage(""); }}
-          className="text-3xl font-extrabold tracking-tighter cursor-pointer hover:opacity-80 transition-opacity"
-        >
+        <h1 onClick={resetApp} className="text-3xl font-extrabold tracking-tighter cursor-pointer hover:opacity-80 transition-opacity">
           SolStyle
         </h1>
         <WalletMultiButton style={{ backgroundColor: '#262626', height: '40px', fontSize: '14px', borderRadius: '8px' }} />
       </div>
 
-      {!selectedInfluencer ? (
+      {/* --- SUCCESS SCREEN --- */}
+      {showSuccessScreen ? (
+        <div className="w-full max-w-md animate-fade-in-up flex flex-col gap-6 items-center">
+          <div className="bg-[#111] p-8 rounded-3xl border border-green-500/50 shadow-2xl shadow-green-900/20 text-center w-full">
+            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-2">Order Placed!</h2>
+            <p className="text-gray-400 text-sm mb-8">Your NFT has been minted and physical order is processing.</p>
+            
+            <div className="bg-gray-900 rounded-xl p-4 text-left mb-6 border border-gray-800">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Shipping To:</p>
+              <p className="font-bold text-white">{shippingDetails.name}</p>
+              <p className="text-gray-400">{shippingDetails.address}</p>
+              <p className="text-gray-400">{shippingDetails.city}, {shippingDetails.zip}</p>
+            </div>
+
+            <button onClick={resetApp} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-all">
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      ) : !selectedInfluencer ? (
         // --- VIEW 1: INFLUENCER SELECTION ---
         <div className="w-full max-w-6xl flex flex-col gap-10 animate-fade-in">
           <div className="text-center space-y-4">
             <h2 className="text-5xl font-bold tracking-tight">Select Influencer</h2>
             <p className="text-gray-400 text-lg">Choose a personality to generate your next exclusive drop.</p>
-            
-            {/* SEARCH BAR */}
             <div className="max-w-xl mx-auto relative pt-4">
-              <input 
-                type="text" 
-                placeholder="Search influencers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#141414] border border-gray-800 rounded-xl py-4 px-6 text-white focus:outline-none focus:border-purple-500 transition-colors placeholder-gray-600"
-              />
+              <input type="text" placeholder="Search influencers..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#141414] border border-gray-800 rounded-xl py-4 px-6 text-white focus:outline-none focus:border-purple-500 transition-colors placeholder-gray-600" />
             </div>
           </div>
-
-          {/* INFLUENCER GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredInfluencers.map((inf) => (
-              <div 
-                key={inf.id}
-                onClick={() => setSelectedInfluencer(inf)}
-                className="bg-[#111] rounded-2xl border border-gray-800 p-6 hover:border-gray-600 hover:bg-[#161616] transition-all cursor-pointer group flex flex-col gap-4"
-              >
-                {/* Avatar: Aspect Square */}
+              <div key={inf.id} onClick={() => setSelectedInfluencer(inf)} className="bg-[#111] rounded-2xl border border-gray-800 p-6 hover:border-gray-600 hover:bg-[#161616] transition-all cursor-pointer group flex flex-col gap-4">
                 <div className="w-full aspect-square rounded-xl overflow-hidden bg-gray-800 relative">
-                    <img 
-                      src={inf.avatar} 
-                      alt={inf.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                    />
+                    <img src={inf.avatar} alt={inf.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
-                
                 <div>
                   <h3 className="text-2xl font-bold text-white">{inf.name}</h3>
                   <p className="mt-2 text-sm text-gray-400 leading-relaxed">{inf.description}</p>
                 </div>
-
-                <div className="mt-auto pt-4 w-full">
-                   <div className="w-full bg-white text-black py-3 rounded-lg text-center text-sm font-bold uppercase tracking-wider group-hover:bg-gray-200 transition-colors">
-                     Select
-                   </div>
-                </div>
+                <div className="mt-auto pt-4 w-full"><div className="w-full bg-white text-black py-3 rounded-lg text-center text-sm font-bold uppercase tracking-wider group-hover:bg-gray-200 transition-colors">Select</div></div>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        // --- VIEW 2: GENERATOR UI (9:16 OUTFIT) ---
+        // --- VIEW 2: GENERATOR UI ---
         <div className="w-full max-w-md flex flex-col gap-6 animate-fade-in-up">
-          <button 
-            onClick={() => { setSelectedInfluencer(null); setDropAddress(""); setCurrentImage(""); setStatus(""); }}
-            className="text-gray-500 hover:text-white flex items-center gap-2 mb-2 text-sm transition-colors"
-          >
-            ← Back to Influencers
-          </button>
+          <button onClick={resetApp} className="text-gray-500 hover:text-white flex items-center gap-2 mb-2 text-sm transition-colors">← Back to Influencers</button>
+          
+          <div className="bg-[#111] p-6 rounded-3xl border border-gray-800 shadow-2xl flex flex-col gap-5 relative">
+            
+            {/* SHIPPING MODAL OVERLAY */}
+            {showShippingModal && (
+              <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-50 rounded-3xl flex flex-col items-center justify-center p-6 text-center">
+                <h3 className="text-xl font-bold mb-6">Shipping Details</h3>
+                <div className="w-full flex flex-col gap-3">
+                  <input type="text" placeholder="Full Name" className="w-full bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
+                    onChange={(e) => setShippingDetails({...shippingDetails, name: e.target.value})} />
+                  <input type="text" placeholder="Street Address" className="w-full bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
+                    onChange={(e) => setShippingDetails({...shippingDetails, address: e.target.value})} />
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="City" className="w-1/2 bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
+                      onChange={(e) => setShippingDetails({...shippingDetails, city: e.target.value})} />
+                    <input type="text" placeholder="Zip Code" className="w-1/2 bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
+                      onChange={(e) => setShippingDetails({...shippingDetails, zip: e.target.value})} />
+                  </div>
+                </div>
+                <button onClick={confirmPurchase} disabled={loading} className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition-all">
+                  {loading ? "Confirming..." : "Confirm & Pay (0.1 SOL)"}
+                </button>
+                <button onClick={() => setShowShippingModal(false)} className="mt-4 text-sm text-gray-500 hover:text-white">Cancel</button>
+              </div>
+            )}
 
-          <div className="bg-[#111] p-6 rounded-3xl border border-gray-800 shadow-2xl flex flex-col gap-5">
-            {/* Header */}
+            {/* MAIN GENERATOR CONTENT */}
             <div className="flex items-center justify-between border-b border-gray-800 pb-4">
               <div className="flex items-center gap-3">
                 <img src={selectedInfluencer.avatar} className="w-10 h-10 rounded-full object-cover border border-gray-600" />
@@ -281,59 +323,33 @@ export default function Home() {
               <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
             </div>
 
-            {/* OUTFIT CONTAINER - 9:16 ASPECT RATIO */}
             <div className="aspect-[9/16] bg-black rounded-2xl overflow-hidden relative border border-gray-800 group flex items-center justify-center">
               {currentImage ? (
                 <a href={currentImage} target="_blank" rel="noopener noreferrer" className="w-full h-full block cursor-zoom-in">
-                  <img 
-                    src={currentImage} 
-                    alt="AI Fashion" 
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
-                  />
+                  <img src={currentImage} alt="AI Fashion" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                 </a>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-4">
                   <div className="w-8 h-8 border-2 border-gray-800 border-t-white rounded-full animate-spin"></div>
-                  <p className="text-xs font-mono tracking-widest uppercase opacity-60">
-                    Awaiting Generation
-                  </p>
+                  <p className="text-xs font-mono tracking-widest uppercase opacity-60">Awaiting Generation</p>
                 </div>
               )}
             </div>
 
             <div className="flex justify-between items-end px-1">
-               <div>
-                 <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Total</p>
-                 <p className="text-xl font-bold text-white">0.1 SOL</p>
-               </div>
-               <div className="text-right">
-                 <p className="text-xs text-gray-500">Gas ~0.000005 SOL</p>
-               </div>
+               <div><p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Total</p><p className="text-xl font-bold text-white">0.1 SOL</p></div>
+               <div className="text-right"><p className="text-xs text-gray-500">Gas ~0.000005 SOL</p></div>
             </div>
 
             <div className="flex flex-col gap-3 pt-2">
-              <button 
-                onClick={createDrop} 
-                disabled={loading}
-                className="w-full bg-white text-black hover:bg-gray-200 py-4 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide"
-              >
+              <button onClick={createDrop} disabled={loading} className="w-full bg-white text-black hover:bg-gray-200 py-4 rounded-xl font-bold text-sm transition-all disabled:opacity-50 uppercase tracking-wide">
                 {loading ? "Generating..." : "Generate Outfit"}
               </button>
-
-              <button 
-                onClick={buyDrop} 
-                disabled={loading || !dropAddress}
-                className="w-full bg-[#1a1a1a] text-white border border-gray-700 hover:border-gray-500 py-4 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:shadow-none uppercase tracking-wide"
-              >
+              <button onClick={handleBuyClick} disabled={loading || !dropAddress} className="w-full bg-[#1a1a1a] text-white border border-gray-700 hover:border-gray-500 py-4 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:shadow-none uppercase tracking-wide">
                 Purchase Drop
               </button>
             </div>
-
-            {status && (
-              <div className="mt-1 text-center">
-                <p className="text-xs text-gray-400 font-mono">{status}</p>
-              </div>
-            )}
+            {status && <div className="mt-1 text-center"><p className="text-xs text-gray-400 font-mono">{status}</p></div>}
           </div>
         </div>
       )}
