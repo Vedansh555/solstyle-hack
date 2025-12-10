@@ -86,17 +86,17 @@ export default function Home() {
   const [status, setStatus] = useState("");
   const [dropAddress, setDropAddress] = useState<string>("");
   const [currentImage, setCurrentImage] = useState<string>("");
-  const [trackingNumber, setTrackingNumber] = useState<string>("");
+  
+  // ORDERS STATE
+  const [orders, setOrders] = useState<any[]>([]); // Stores list of purchased orders
   
   // UI OVERLAY STATE
-  const [viewState, setViewState] = useState<"MAIN" | "SHIPPING_FORM" | "SUCCESS">("MAIN");
+  // STATES: MAIN, SHIPPING_FORM, SUCCESS, ORDERS_VIEW
+  const [viewState, setViewState] = useState<string>("MAIN");
   
   // FORM DATA
   const [shippingDetails, setShippingDetails] = useState({
-    name: "",
-    address: "",
-    city: "",
-    zip: ""
+    name: "", address: "", city: "", zip: ""
   });
 
   const getProgram = () => {
@@ -196,10 +196,19 @@ export default function Home() {
         .signers([mintKeypair]) 
         .rpc();
 
-      // SUCCESS!
-      const fakeTracking = "TRK-" + Math.floor(100000 + Math.random() * 900000);
-      setTrackingNumber(fakeTracking);
-      setViewState("SUCCESS"); // Open Success Screen
+      // --- SAVE ORDER TO HISTORY ---
+      const newOrder = {
+        id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+        tracking: "TRK-" + Math.floor(100000 + Math.random() * 900000),
+        image: currentImage,
+        influencer: selectedInfluencer.name,
+        date: new Date().toLocaleDateString(),
+        status: "Processing",
+        address: `${shippingDetails.address}, ${shippingDetails.city}`
+      };
+      
+      setOrders([newOrder, ...orders]); // Add to top of list
+      setViewState("SUCCESS"); // Show Success Screen
       setStatus("");
 
     } catch (err: any) {
@@ -227,7 +236,17 @@ export default function Home() {
         <h1 onClick={resetApp} className="text-3xl font-extrabold tracking-tighter cursor-pointer hover:opacity-80 transition-opacity">
           SolStyle
         </h1>
-        <WalletMultiButton style={{ backgroundColor: '#262626', height: '40px', fontSize: '14px', borderRadius: '8px' }} />
+        
+        <div className="flex items-center gap-4">
+            {/* MY ORDERS BUTTON */}
+            <button 
+                onClick={() => setViewState("ORDERS_VIEW")}
+                className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all"
+            >
+                <span>📦</span> My Orders ({orders.length})
+            </button>
+            <WalletMultiButton style={{ backgroundColor: '#262626', height: '40px', fontSize: '14px', borderRadius: '8px' }} />
+        </div>
       </div>
 
       {/* --- SHIPPING FORM OVERLAY --- */}
@@ -282,30 +301,70 @@ export default function Home() {
               <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 className="text-4xl font-extrabold text-white mb-2">Order Placed!</h2>
-            <p className="text-gray-400 text-sm mb-8">Payment confirmed. Your outfit is being prepared.</p>
+            <p className="text-gray-400 text-sm mb-8">NFT Minted. Shipping details received.</p>
             
-            <div className="bg-[#1a1a1a] rounded-xl p-6 text-left mb-8 border border-gray-800 space-y-4">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Tracking Number</p>
-                <p className="font-mono text-purple-400 text-lg">{trackingNumber}</p>
-              </div>
-              <div className="border-t border-gray-800 pt-3">
-                <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Shipping To</p>
-                <p className="font-bold text-white">{shippingDetails.name}</p>
-                <p className="text-gray-400 text-sm">{shippingDetails.address}</p>
-                <p className="text-gray-400 text-sm">{shippingDetails.city}, {shippingDetails.zip}</p>
-              </div>
-            </div>
-
-            <button onClick={resetApp} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-all text-lg">
+            <button onClick={() => setViewState("ORDERS_VIEW")} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-all text-lg mb-3">
+              Track Order
+            </button>
+            <button onClick={resetApp} className="w-full bg-[#222] text-white py-4 rounded-xl font-bold hover:bg-[#333] transition-all text-lg">
               Continue Shopping
             </button>
           </div>
         </div>
       )}
 
-      {/* --- MAIN UI --- */}
-      {!selectedInfluencer ? (
+      {/* --- MY ORDERS VIEW --- */}
+      {viewState === "ORDERS_VIEW" && (
+        <div className="fixed inset-0 bg-[#0a0a0a] z-[9998] flex flex-col items-center p-8 overflow-y-auto">
+            <div className="w-full max-w-2xl mt-20">
+                <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-3xl font-bold">My Orders</h2>
+                    <button onClick={() => setViewState("MAIN")} className="text-gray-400 hover:text-white">✕ Close</button>
+                </div>
+
+                {orders.length === 0 ? (
+                    <div className="text-center text-gray-500 py-20 bg-[#111] rounded-2xl border border-gray-800">
+                        <p className="text-lg">No orders yet.</p>
+                        <button onClick={resetApp} className="mt-4 text-purple-400 font-bold hover:underline">Start Shopping</button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-4">
+                        {orders.map((order, idx) => (
+                            <div key={idx} className="bg-[#111] border border-gray-800 p-6 rounded-2xl flex gap-6 hover:border-gray-600 transition-all">
+                                <div className="w-24 h-32 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
+                                    <img src={order.image} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="text-xl font-bold text-white">{order.influencer} Drop</h3>
+                                        <span className="bg-green-900/30 text-green-400 text-xs px-2 py-1 rounded border border-green-800">{order.status}</span>
+                                    </div>
+                                    <p className="text-gray-400 text-sm mb-4">Ordered on {order.date}</p>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Order ID</p>
+                                            <p className="font-mono text-sm">{order.id}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Tracking #</p>
+                                            <p className="font-mono text-purple-400 text-sm">{order.tracking}</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-gray-800">
+                                        <p className="text-xs text-gray-500">Shipping to: {order.address}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+      )}
+
+      {/* --- MAIN UI (Influencer Grid & Generator) --- */}
+      {viewState === "MAIN" && !selectedInfluencer && (
         // VIEW 1: SELECTION
         <div className="w-full max-w-6xl flex flex-col gap-10 animate-fade-in">
           <div className="text-center space-y-4">
@@ -330,7 +389,9 @@ export default function Home() {
             ))}
           </div>
         </div>
-      ) : (
+      )}
+
+      {viewState === "MAIN" && selectedInfluencer && (
         // VIEW 2: GENERATOR
         <div className="w-full max-w-md flex flex-col gap-6 animate-fade-in-up pb-20">
           <button onClick={resetApp} className="text-gray-500 hover:text-white flex items-center gap-2 mb-2 text-sm transition-colors">← Back to Influencers</button>
