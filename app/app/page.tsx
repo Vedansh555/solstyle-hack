@@ -11,14 +11,13 @@ import idl from "@/utils/idl.json";
 // --- CONFIGURATION ---
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
-// --- INFLUENCER DATA (With Fabric Specs) ---
+// --- INFLUENCER DATA ---
 const INFLUENCERS = [
   {
     id: "kylie",
     name: "Kylie Jenner",
     description: "Prominent American media personality and businesswoman",
     avatar: "https://gateway.pinata.cloud/ipfs/bafybeieyssevqd76uyeto3iyb4mypqamvkjazq2r4luqw4c4geffc2d3bm",
-    // New Fabric Details
     fabric: "Latex & Crystal Mesh",
     fit: "Bodycon / Tight",
     outfits: [
@@ -80,18 +79,24 @@ export default function Home() {
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
   
+  // LOGIC STATE
   const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [dropAddress, setDropAddress] = useState<string>("");
   const [currentImage, setCurrentImage] = useState<string>("");
+  const [trackingNumber, setTrackingNumber] = useState<string>("");
   
-  // MODAL STATES
-  const [showShippingModal, setShowShippingModal] = useState(false);
-  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  // UI OVERLAY STATE
+  const [viewState, setViewState] = useState<"MAIN" | "SHIPPING_FORM" | "SUCCESS">("MAIN");
+  
+  // FORM DATA
   const [shippingDetails, setShippingDetails] = useState({
-    name: "", address: "", city: "", zip: ""
+    name: "",
+    address: "",
+    city: "",
+    zip: ""
   });
 
   const getProgram = () => {
@@ -150,7 +155,7 @@ export default function Home() {
 
   const handleBuyClick = () => {
     if (!wallet || !dropAddress) return alert("Please generate a drop first.");
-    setShowShippingModal(true); // Open Modal
+    setViewState("SHIPPING_FORM"); // Open Shipping Form
   };
 
   const confirmPurchase = async () => {
@@ -191,8 +196,10 @@ export default function Home() {
         .signers([mintKeypair]) 
         .rpc();
 
-      setShowShippingModal(false);
-      setShowSuccessScreen(true); // Show Success
+      // SUCCESS!
+      const fakeTracking = "TRK-" + Math.floor(100000 + Math.random() * 900000);
+      setTrackingNumber(fakeTracking);
+      setViewState("SUCCESS"); // Open Success Screen
       setStatus("");
 
     } catch (err: any) {
@@ -208,8 +215,7 @@ export default function Home() {
     setDropAddress("");
     setCurrentImage("");
     setStatus("");
-    setShowSuccessScreen(false);
-    setShowShippingModal(false);
+    setViewState("MAIN");
     setShippingDetails({ name: "", address: "", city: "", zip: "" });
   };
 
@@ -224,24 +230,36 @@ export default function Home() {
         <WalletMultiButton style={{ backgroundColor: '#262626', height: '40px', fontSize: '14px', borderRadius: '8px' }} />
       </div>
 
-      {/* --- OVERLAY: SHIPPING MODAL (Fixed Position) --- */}
-      {showShippingModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in">
+      {/* --- SHIPPING FORM OVERLAY --- */}
+      {viewState === "SHIPPING_FORM" && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-[#111] p-8 rounded-3xl border border-gray-700 w-full max-w-md shadow-2xl relative">
-            <h3 className="text-2xl font-bold mb-6 text-center">Shipping Details</h3>
+            <h3 className="text-2xl font-bold mb-6 text-center text-white">Enter Shipping Details</h3>
             
             <div className="flex flex-col gap-4">
-              <input type="text" placeholder="Full Name" className="w-full bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
-                onChange={(e) => setShippingDetails({...shippingDetails, name: e.target.value})} />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-500 ml-1">FULL NAME</label>
+                <input type="text" placeholder="John Doe" className="w-full bg-[#1a1a1a] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                  onChange={(e) => setShippingDetails({...shippingDetails, name: e.target.value})} />
+              </div>
               
-              <input type="text" placeholder="Street Address" className="w-full bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
-                onChange={(e) => setShippingDetails({...shippingDetails, address: e.target.value})} />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-500 ml-1">STREET ADDRESS</label>
+                <input type="text" placeholder="123 Solana Blvd" className="w-full bg-[#1a1a1a] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                  onChange={(e) => setShippingDetails({...shippingDetails, address: e.target.value})} />
+              </div>
               
               <div className="flex gap-3">
-                <input type="text" placeholder="City" className="w-1/2 bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
-                  onChange={(e) => setShippingDetails({...shippingDetails, city: e.target.value})} />
-                <input type="text" placeholder="Zip Code" className="w-1/2 bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
-                  onChange={(e) => setShippingDetails({...shippingDetails, zip: e.target.value})} />
+                <div className="flex flex-col gap-1 w-1/2">
+                  <label className="text-xs text-gray-500 ml-1">CITY</label>
+                  <input type="text" placeholder="New York" className="w-full bg-[#1a1a1a] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                    onChange={(e) => setShippingDetails({...shippingDetails, city: e.target.value})} />
+                </div>
+                <div className="flex flex-col gap-1 w-1/2">
+                  <label className="text-xs text-gray-500 ml-1">ZIP CODE</label>
+                  <input type="text" placeholder="10001" className="w-full bg-[#1a1a1a] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                    onChange={(e) => setShippingDetails({...shippingDetails, zip: e.target.value})} />
+                </div>
               </div>
             </div>
 
@@ -249,28 +267,34 @@ export default function Home() {
               {loading ? "Processing Payment..." : "Confirm & Pay 0.1 SOL"}
             </button>
             
-            <button onClick={() => setShowShippingModal(false)} className="w-full mt-3 text-sm text-gray-500 hover:text-white transition-colors">
+            <button onClick={() => setViewState("MAIN")} className="w-full mt-3 text-sm text-gray-500 hover:text-white transition-colors">
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      {/* --- OVERLAY: SUCCESS SCREEN (Fixed Position) --- */}
-      {showSuccessScreen && (
-        <div className="fixed inset-0 bg-[#0a0a0a] z-[100] flex flex-col items-center justify-center p-6 animate-fade-in">
+      {/* --- ORDER SUCCESS OVERLAY --- */}
+      {viewState === "SUCCESS" && (
+        <div className="fixed inset-0 bg-[#0a0a0a] z-[9999] flex flex-col items-center justify-center p-6 animate-fade-in">
           <div className="bg-[#111] p-10 rounded-3xl border border-green-500/30 shadow-2xl shadow-green-900/20 text-center w-full max-w-md">
             <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/50">
               <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 className="text-4xl font-extrabold text-white mb-2">Order Placed!</h2>
-            <p className="text-gray-400 text-sm mb-8">Your NFT has been minted and the physical item is being prepared.</p>
+            <p className="text-gray-400 text-sm mb-8">Payment confirmed. Your outfit is being prepared.</p>
             
-            <div className="bg-[#1a1a1a] rounded-xl p-6 text-left mb-8 border border-gray-800">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3 font-bold">Shipping Destination</p>
-              <p className="font-bold text-xl text-white mb-1">{shippingDetails.name}</p>
-              <p className="text-gray-400">{shippingDetails.address}</p>
-              <p className="text-gray-400">{shippingDetails.city}, {shippingDetails.zip}</p>
+            <div className="bg-[#1a1a1a] rounded-xl p-6 text-left mb-8 border border-gray-800 space-y-4">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Tracking Number</p>
+                <p className="font-mono text-purple-400 text-lg">{trackingNumber}</p>
+              </div>
+              <div className="border-t border-gray-800 pt-3">
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Shipping To</p>
+                <p className="font-bold text-white">{shippingDetails.name}</p>
+                <p className="text-gray-400 text-sm">{shippingDetails.address}</p>
+                <p className="text-gray-400 text-sm">{shippingDetails.city}, {shippingDetails.zip}</p>
+              </div>
             </div>
 
             <button onClick={resetApp} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-all text-lg">
@@ -338,7 +362,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* FABRIC SPECS SECTION */}
+            {/* FABRIC SPECS */}
             <div className="bg-[#1a1a1a] p-4 rounded-xl border border-gray-800">
                 <div className="flex justify-between items-center mb-2">
                     <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Material</span>
