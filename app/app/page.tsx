@@ -11,13 +11,16 @@ import idl from "@/utils/idl.json";
 // --- CONFIGURATION ---
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
-// --- INFLUENCER DATA ---
+// --- INFLUENCER DATA (With Fabric Specs) ---
 const INFLUENCERS = [
   {
     id: "kylie",
     name: "Kylie Jenner",
     description: "Prominent American media personality and businesswoman",
     avatar: "https://gateway.pinata.cloud/ipfs/bafybeieyssevqd76uyeto3iyb4mypqamvkjazq2r4luqw4c4geffc2d3bm",
+    // New Fabric Details
+    fabric: "Latex & Crystal Mesh",
+    fit: "Bodycon / Tight",
     outfits: [
       "https://gateway.pinata.cloud/ipfs/bafybeiaxa75frhtavwvbg2suakgfbdbkd5gy6a3hkcqpbkcp4wdtwg5zoa",
       "https://gateway.pinata.cloud/ipfs/bafybeihypze6geh7gp7zkqf6qhcchvd6e3rvkztqzc6jehct7n4fa32xji"
@@ -28,6 +31,8 @@ const INFLUENCERS = [
     name: "Kartik",
     description: "AI Fashion Influencer",
     avatar: "https://gateway.pinata.cloud/ipfs/bafybeidsb6z7qlkruvbizva7y3tuav2kb3wam5iljm5xv75nqopitetwfe",
+    fabric: "Smart-Cotton Blend",
+    fit: "Oversized Streetwear",
     outfits: [
       "https://gateway.pinata.cloud/ipfs/bafybeib7apvwnakha5wis6yqh6o4uim2xbp6fwqszseqagyrtetslppeoy",
       "https://gateway.pinata.cloud/ipfs/bafybeih54oijwpop5mcu2skwonv2eq45qzgfrjfjqvkv3bit3lclr52liu"
@@ -38,6 +43,8 @@ const INFLUENCERS = [
     name: "Zaara",
     description: "AI streetwear fashion influencer",
     avatar: "https://gateway.pinata.cloud/ipfs/bafybeifyhzodq2uw3wktuhzncpjwpqtvgbnf73nxoyzvhmomtq6elp5vxe",
+    fabric: "Digital Silk & Neon Thread",
+    fit: "Traditional Fusion",
     outfits: [
       "https://gateway.pinata.cloud/ipfs/bafybeiaovpznfolrtyltyg4k5xnceuqpu5rikijn7wo26opzdq26lxu2dq",
       "https://gateway.pinata.cloud/ipfs/bafybeia5jga4u2dfe5fcplshpzrlwcaqnmbbc76ec2bvfbbssytcadp75y"
@@ -48,6 +55,8 @@ const INFLUENCERS = [
     name: "Donald Trump",
     description: "American Politician",
     avatar: "https://gateway.pinata.cloud/ipfs/bafybeigpjvycjpsxw7ki2olithmmm3iiqyfqucj4rtox6lsfzfzkmw2rhm",
+    fabric: "Ballistic Nylon Suit",
+    fit: "Structured / Formal",
     outfits: [
       "https://gateway.pinata.cloud/ipfs/bafkreidujfu5ugwhnoia64ebdpnkmj2whzho6faz4jl2toqhw57trcguoa",
       "https://gateway.pinata.cloud/ipfs/bafybeibjfaksoz5zoivcbrbvhrgstp5fixbuhlxqycmwln6y3lpqcw5lym"
@@ -58,6 +67,8 @@ const INFLUENCERS = [
     name: "David",
     description: "AI Traveller",
     avatar: "https://gateway.pinata.cloud/ipfs/bafybeibvxwnzeujx5tbzwyhmpg2zplyvglmxjodkoclyepszbj4r2a4rau",
+    fabric: "Gore-Tex & Solar Weave",
+    fit: "Utility / Outdoor",
     outfits: [
       "https://gateway.pinata.cloud/ipfs/bafybeiby2wbjmrivlzff4c3o43bb6sqiujlykhru5trcdppspsdjy25otm",
       "https://gateway.pinata.cloud/ipfs/bafybeigryfxotup2gdyy452ejpwlhulqxa5v3idti6rxrv2txsduw5wmue"
@@ -69,7 +80,6 @@ export default function Home() {
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
   
-  // Logic State
   const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,14 +87,11 @@ export default function Home() {
   const [dropAddress, setDropAddress] = useState<string>("");
   const [currentImage, setCurrentImage] = useState<string>("");
   
-  // UI State
+  // MODAL STATES
   const [showShippingModal, setShowShippingModal] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [shippingDetails, setShippingDetails] = useState({
-    name: "",
-    address: "",
-    city: "",
-    zip: ""
+    name: "", address: "", city: "", zip: ""
   });
 
   const getProgram = () => {
@@ -99,6 +106,8 @@ export default function Home() {
     inf.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // --- ACTIONS ---
+
   const createDrop = async () => {
     if (!wallet) return alert("Connect wallet to proceed");
     const program = getProgram();
@@ -107,7 +116,6 @@ export default function Home() {
     try {
       setLoading(true);
       setStatus("Curating Style...");
-      
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const outfits = selectedInfluencer.outfits;
@@ -115,7 +123,6 @@ export default function Home() {
       setCurrentImage(randomImage);
       
       setStatus("Minting Drop on Solana...");
-
       const dropAccount = web3.Keypair.generate();
       const price = new BN(100000000); 
       const commission = 500; 
@@ -141,22 +148,20 @@ export default function Home() {
     }
   };
 
-  // Step 1: Open Shipping Form
   const handleBuyClick = () => {
-    if (!wallet || !dropAddress) return alert("Generate a drop first");
-    setShowShippingModal(true);
+    if (!wallet || !dropAddress) return alert("Please generate a drop first.");
+    setShowShippingModal(true); // Open Modal
   };
 
-  // Step 2: Execute Purchase
   const confirmPurchase = async () => {
-    if (!shippingDetails.name || !shippingDetails.address) return alert("Please fill details");
+    if (!shippingDetails.name || !shippingDetails.address) return alert("Please fill in shipping details");
     
     const program = getProgram();
     if (!program) return;
 
     try {
       setLoading(true);
-      setStatus("Processing Micro-payment...");
+      setStatus("Processing Transaction...");
 
       const dropPubkey = new PublicKey(dropAddress);
       // @ts-ignore
@@ -164,16 +169,8 @@ export default function Home() {
       const sellerPubkey = dropAccountData.seller;
       const mintKeypair = web3.Keypair.generate();
 
-      const [pdaAuthority] = PublicKey.findProgramAddressSync(
-        [Buffer.from("authority")],
-        PROGRAM_ID
-      );
-
-      const buyerTokenAccount = await getAssociatedTokenAddress(
-        mintKeypair.publicKey,
-        wallet.publicKey
-      );
-
+      const [pdaAuthority] = PublicKey.findProgramAddressSync([Buffer.from("authority")], PROGRAM_ID);
+      const buyerTokenAccount = await getAssociatedTokenAddress(mintKeypair.publicKey, wallet.publicKey);
       const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
       const [metadataAddress] = PublicKey.findProgramAddressSync(
         [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()],
@@ -185,26 +182,18 @@ export default function Home() {
       await program.methods
         .buyDrop(price)
         .accounts({
-          drop: dropPubkey,
-          buyer: wallet.publicKey,
-          seller: sellerPubkey,
-          commissionRecipient: wallet.publicKey, 
-          mint: mintKeypair.publicKey,
-          buyerTokenAccount: buyerTokenAccount,
-          pdaAuthority: pdaAuthority,
-          metadataAccount: metadataAddress,
-          rent: web3.SYSVAR_RENT_PUBKEY,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
+          drop: dropPubkey, buyer: wallet.publicKey, seller: sellerPubkey, commissionRecipient: wallet.publicKey, 
+          mint: mintKeypair.publicKey, buyerTokenAccount: buyerTokenAccount, pdaAuthority: pdaAuthority,
+          metadataAccount: metadataAddress, rent: web3.SYSVAR_RENT_PUBKEY, tokenProgram: TOKEN_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID, systemProgram: SystemProgram.programId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         })
         .signers([mintKeypair]) 
         .rpc();
 
-      setStatus("Purchase Successful.");
       setShowShippingModal(false);
-      setShowSuccessScreen(true); // Show Success Screen
+      setShowSuccessScreen(true); // Show Success
+      setStatus("");
 
     } catch (err: any) {
       console.error(err);
@@ -214,18 +203,19 @@ export default function Home() {
     }
   };
 
-  // Reset Everything
   const resetApp = () => {
     setSelectedInfluencer(null);
     setDropAddress("");
     setCurrentImage("");
     setStatus("");
     setShowSuccessScreen(false);
+    setShowShippingModal(false);
     setShippingDetails({ name: "", address: "", city: "", zip: "" });
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 bg-[#0a0a0a] text-white font-sans selection:bg-purple-500 selection:text-white">
+    <main className="flex min-h-screen flex-col items-center p-8 bg-[#0a0a0a] text-white font-sans selection:bg-purple-500 selection:text-white relative">
+      
       {/* NAVBAR */}
       <div className="z-10 w-full max-w-6xl items-center justify-between flex mb-12 border-b border-gray-800 pb-6">
         <h1 onClick={resetApp} className="text-3xl font-extrabold tracking-tighter cursor-pointer hover:opacity-80 transition-opacity">
@@ -234,30 +224,65 @@ export default function Home() {
         <WalletMultiButton style={{ backgroundColor: '#262626', height: '40px', fontSize: '14px', borderRadius: '8px' }} />
       </div>
 
-      {/* --- SUCCESS SCREEN --- */}
-      {showSuccessScreen ? (
-        <div className="w-full max-w-md animate-fade-in-up flex flex-col gap-6 items-center">
-          <div className="bg-[#111] p-8 rounded-3xl border border-green-500/50 shadow-2xl shadow-green-900/20 text-center w-full">
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-            </div>
-            <h2 className="text-3xl font-bold text-white mb-2">Order Placed!</h2>
-            <p className="text-gray-400 text-sm mb-8">Your NFT has been minted and physical order is processing.</p>
+      {/* --- OVERLAY: SHIPPING MODAL (Fixed Position) --- */}
+      {showShippingModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#111] p-8 rounded-3xl border border-gray-700 w-full max-w-md shadow-2xl relative">
+            <h3 className="text-2xl font-bold mb-6 text-center">Shipping Details</h3>
             
-            <div className="bg-gray-900 rounded-xl p-4 text-left mb-6 border border-gray-800">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Shipping To:</p>
-              <p className="font-bold text-white">{shippingDetails.name}</p>
+            <div className="flex flex-col gap-4">
+              <input type="text" placeholder="Full Name" className="w-full bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                onChange={(e) => setShippingDetails({...shippingDetails, name: e.target.value})} />
+              
+              <input type="text" placeholder="Street Address" className="w-full bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                onChange={(e) => setShippingDetails({...shippingDetails, address: e.target.value})} />
+              
+              <div className="flex gap-3">
+                <input type="text" placeholder="City" className="w-1/2 bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                  onChange={(e) => setShippingDetails({...shippingDetails, city: e.target.value})} />
+                <input type="text" placeholder="Zip Code" className="w-1/2 bg-[#222] border border-gray-700 p-4 rounded-xl text-white outline-none focus:border-purple-500 transition-colors"
+                  onChange={(e) => setShippingDetails({...shippingDetails, zip: e.target.value})} />
+              </div>
+            </div>
+
+            <button onClick={confirmPurchase} disabled={loading} className="w-full mt-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg shadow-purple-900/20">
+              {loading ? "Processing Payment..." : "Confirm & Pay 0.1 SOL"}
+            </button>
+            
+            <button onClick={() => setShowShippingModal(false)} className="w-full mt-3 text-sm text-gray-500 hover:text-white transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- OVERLAY: SUCCESS SCREEN (Fixed Position) --- */}
+      {showSuccessScreen && (
+        <div className="fixed inset-0 bg-[#0a0a0a] z-[100] flex flex-col items-center justify-center p-6 animate-fade-in">
+          <div className="bg-[#111] p-10 rounded-3xl border border-green-500/30 shadow-2xl shadow-green-900/20 text-center w-full max-w-md">
+            <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/50">
+              <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 className="text-4xl font-extrabold text-white mb-2">Order Placed!</h2>
+            <p className="text-gray-400 text-sm mb-8">Your NFT has been minted and the physical item is being prepared.</p>
+            
+            <div className="bg-[#1a1a1a] rounded-xl p-6 text-left mb-8 border border-gray-800">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3 font-bold">Shipping Destination</p>
+              <p className="font-bold text-xl text-white mb-1">{shippingDetails.name}</p>
               <p className="text-gray-400">{shippingDetails.address}</p>
               <p className="text-gray-400">{shippingDetails.city}, {shippingDetails.zip}</p>
             </div>
 
-            <button onClick={resetApp} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-all">
+            <button onClick={resetApp} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-all text-lg">
               Continue Shopping
             </button>
           </div>
         </div>
-      ) : !selectedInfluencer ? (
-        // --- VIEW 1: INFLUENCER SELECTION ---
+      )}
+
+      {/* --- MAIN UI --- */}
+      {!selectedInfluencer ? (
+        // VIEW 1: SELECTION
         <div className="w-full max-w-6xl flex flex-col gap-10 animate-fade-in">
           <div className="text-center space-y-4">
             <h2 className="text-5xl font-bold tracking-tight">Select Influencer</h2>
@@ -282,36 +307,12 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        // --- VIEW 2: GENERATOR UI ---
-        <div className="w-full max-w-md flex flex-col gap-6 animate-fade-in-up">
+        // VIEW 2: GENERATOR
+        <div className="w-full max-w-md flex flex-col gap-6 animate-fade-in-up pb-20">
           <button onClick={resetApp} className="text-gray-500 hover:text-white flex items-center gap-2 mb-2 text-sm transition-colors">← Back to Influencers</button>
           
-          <div className="bg-[#111] p-6 rounded-3xl border border-gray-800 shadow-2xl flex flex-col gap-5 relative">
-            
-            {/* SHIPPING MODAL OVERLAY */}
-            {showShippingModal && (
-              <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-50 rounded-3xl flex flex-col items-center justify-center p-6 text-center">
-                <h3 className="text-xl font-bold mb-6">Shipping Details</h3>
-                <div className="w-full flex flex-col gap-3">
-                  <input type="text" placeholder="Full Name" className="w-full bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
-                    onChange={(e) => setShippingDetails({...shippingDetails, name: e.target.value})} />
-                  <input type="text" placeholder="Street Address" className="w-full bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
-                    onChange={(e) => setShippingDetails({...shippingDetails, address: e.target.value})} />
-                  <div className="flex gap-2">
-                    <input type="text" placeholder="City" className="w-1/2 bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
-                      onChange={(e) => setShippingDetails({...shippingDetails, city: e.target.value})} />
-                    <input type="text" placeholder="Zip Code" className="w-1/2 bg-[#222] border border-gray-700 p-3 rounded-lg text-white" 
-                      onChange={(e) => setShippingDetails({...shippingDetails, zip: e.target.value})} />
-                  </div>
-                </div>
-                <button onClick={confirmPurchase} disabled={loading} className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition-all">
-                  {loading ? "Confirming..." : "Confirm & Pay (0.1 SOL)"}
-                </button>
-                <button onClick={() => setShowShippingModal(false)} className="mt-4 text-sm text-gray-500 hover:text-white">Cancel</button>
-              </div>
-            )}
-
-            {/* MAIN GENERATOR CONTENT */}
+          <div className="bg-[#111] p-6 rounded-3xl border border-gray-800 shadow-2xl flex flex-col gap-5">
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-800 pb-4">
               <div className="flex items-center gap-3">
                 <img src={selectedInfluencer.avatar} className="w-10 h-10 rounded-full object-cover border border-gray-600" />
@@ -323,6 +324,7 @@ export default function Home() {
               <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
             </div>
 
+            {/* OUTFIT CONTAINER */}
             <div className="aspect-[9/16] bg-black rounded-2xl overflow-hidden relative border border-gray-800 group flex items-center justify-center">
               {currentImage ? (
                 <a href={currentImage} target="_blank" rel="noopener noreferrer" className="w-full h-full block cursor-zoom-in">
@@ -334,6 +336,18 @@ export default function Home() {
                   <p className="text-xs font-mono tracking-widest uppercase opacity-60">Awaiting Generation</p>
                 </div>
               )}
+            </div>
+
+            {/* FABRIC SPECS SECTION */}
+            <div className="bg-[#1a1a1a] p-4 rounded-xl border border-gray-800">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Material</span>
+                    <span className="text-xs text-white font-mono">{selectedInfluencer.fabric}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Fit Type</span>
+                    <span className="text-xs text-white font-mono">{selectedInfluencer.fit}</span>
+                </div>
             </div>
 
             <div className="flex justify-between items-end px-1">
