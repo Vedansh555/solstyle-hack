@@ -4,7 +4,7 @@
 
 **SolStyle** is a decentralized platform bridging the gap between digital identity and physical fashion. By combining **Real Icons** (Kylie Jenner, Ronaldo) with **AI Influencers** (Zaara, Neo), we enable users to generate, mint, and own exclusive fashion drops as verifiable NFTs on the Solana blockchain.
 
-![SolStyle Interface]([https://via.placeholder.com/1200x600.png?text=SolStyle+Interface+Preview](https://github.com/Vedansh555/solstyle-hack/blob/main/homepage-interface))
+![SolStyle Interface](https://github.com/Vedansh555/solstyle-hack/blob/main/homepage-interface)
 
 ---
 
@@ -101,5 +101,6 @@ Hackathon Tracks
 Consumer Crypto
 Payment/Commerce
 AI + Crypto
+
 
 
