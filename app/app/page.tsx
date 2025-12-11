@@ -11,6 +11,17 @@ import idl from "@/utils/idl.json";
 // --- CONFIGURATION ---
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
+// --- TYPES (Fixes the Red Underlines) ---
+interface Order {
+  id: string;
+  tracking: string;
+  image: string;
+  influencer: string;
+  date: string;
+  status: string;
+  address: string;
+}
+
 // --- INFLUENCER DATA ---
 const INFLUENCERS = [
   {
@@ -86,9 +97,10 @@ export default function Home() {
   const [status, setStatus] = useState("");
   const [dropAddress, setDropAddress] = useState<string>("");
   const [currentImage, setCurrentImage] = useState<string>("");
+  const [trackingNumber, setTrackingNumber] = useState<string>("");
   
-  // ORDERS STATE
-  const [orders, setOrders] = useState<any[]>([]); // Stores list of purchased orders
+  // ORDERS STATE (Now properly typed!)
+  const [orders, setOrders] = useState<Order[]>([]); 
   
   // UI OVERLAY STATE
   // STATES: MAIN, SHIPPING_FORM, SUCCESS, ORDERS_VIEW
@@ -159,6 +171,7 @@ export default function Home() {
   };
 
   const confirmPurchase = async () => {
+    if (!wallet) return alert("Wallet disconnected");
     if (!shippingDetails.name || !shippingDetails.address) return alert("Please fill in shipping details");
     
     const program = getProgram();
@@ -197,9 +210,12 @@ export default function Home() {
         .rpc();
 
       // SUCCESS! SAVE ORDER
-      const newOrder = {
+      const fakeTracking = "TRK-" + Math.floor(100000 + Math.random() * 900000);
+      setTrackingNumber(fakeTracking);
+      
+      const newOrder: Order = {
         id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
-        tracking: "TRK-" + Math.floor(100000 + Math.random() * 900000),
+        tracking: fakeTracking,
         image: currentImage,
         influencer: selectedInfluencer.name,
         date: new Date().toLocaleDateString(),
@@ -238,7 +254,7 @@ export default function Home() {
         </h1>
         
         <div className="flex items-center gap-4">
-            {/* --- MY ORDERS BUTTON (Visible Now!) --- */}
+            {/* --- MY ORDERS BUTTON --- */}
             <button 
                 onClick={() => setViewState("ORDERS_VIEW")}
                 className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-purple-500/50 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg shadow-purple-900/10"
@@ -306,7 +322,7 @@ export default function Home() {
             <div className="bg-[#1a1a1a] rounded-xl p-6 text-left mb-8 border border-gray-800 space-y-4">
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Tracking Number</p>
-                <p className="font-mono text-purple-400 text-lg">TRK-Processing...</p>
+                <p className="font-mono text-purple-400 text-lg">{trackingNumber}</p>
               </div>
             </div>
 
