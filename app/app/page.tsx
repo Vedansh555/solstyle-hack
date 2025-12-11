@@ -11,17 +11,6 @@ import idl from "@/utils/idl.json";
 // --- CONFIGURATION ---
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
-// --- TYPES ---
-interface Order {
-  id: string;
-  tracking: string;
-  image: string;
-  influencer: string;
-  date: string;
-  status: string;
-  address: string;
-}
-
 // --- INFLUENCER DATA ---
 const INFLUENCERS = [
   {
@@ -97,6 +86,17 @@ const INFLUENCERS = [
     ]
   }
 ];
+
+// --- TYPES ---
+interface Order {
+  id: string;
+  tracking: string;
+  image: string;
+  influencer: string;
+  date: string;
+  status: string;
+  address: string;
+}
 
 export default function Home() {
   const wallet = useAnchorWallet();
@@ -256,6 +256,12 @@ export default function Home() {
     setShippingDetails({ name: "", address: "", city: "", zip: "" });
   };
 
+  const shareOnTwitter = () => {
+    const text = `Just copped an exclusive AI Fashion Drop from ${selectedInfluencer?.name || "SolStyle"}! 🧥✨ Minted on @Solana using SolStyle.`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center p-8 bg-[#0a0a0a] text-white font-sans selection:bg-purple-500 selection:text-white relative">
       
@@ -329,8 +335,13 @@ export default function Home() {
               <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 className="text-4xl font-extrabold text-white mb-2">Order Placed!</h2>
-            <p className="text-gray-400 text-sm mb-8">Payment confirmed. Your outfit is being prepared.</p>
+            <p className="text-gray-400 text-sm mb-6">Payment confirmed. Your outfit is being prepared.</p>
             
+            {/* SHARE BUTTON */}
+            <button onClick={shareOnTwitter} className="w-full mb-6 bg-[#000] border border-gray-700 hover:border-white text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                <span>✖</span> Share on X
+            </button>
+
             <div className="bg-[#1a1a1a] rounded-xl p-6 text-left mb-8 border border-gray-800 space-y-4">
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Tracking Number</p>
