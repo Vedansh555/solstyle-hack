@@ -53,7 +53,7 @@ Integrated "Share on X" functionality allows users to instantly broadcast their 
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 **Smart Contract (`solstyle_program`)**
 * `CreateDrop`: Initializes a new collection with defined commission parameters.
@@ -77,27 +77,28 @@ Integrated "Share on X" functionality allows users to instantly broadcast their 
 ```bash
 git clone [https://github.com/Vedansh555/solstyle-hack.git](https://github.com/Vedansh555/solstyle-hack.git)
 cd solstyle-hack
-
+```
 2.Smart Contract
+```bash
 cd programs/solstyle_program
 anchor build
 anchor test
+```
 
 3. Client
-Bash
-
+```bash
 cd app
 npm install
 npm run dev
-
+```
 Deployment Details
-Program ID: 3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6
 
+Program ID: 3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6
 Cluster: Devnet
 
 Hackathon Tracks
+
 Consumer Crypto
-
 Payment/Commerce
-
 AI + Crypto
+
