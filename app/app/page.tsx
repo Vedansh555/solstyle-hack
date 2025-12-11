@@ -11,7 +11,7 @@ import idl from "@/utils/idl.json";
 // --- CONFIGURATION ---
 const PROGRAM_ID = new PublicKey("3PAQx8QnCzQxywuN2WwSyc8G7UNH95zqb1ZdsFm5fZC6");
 
-// --- TYPES (Fixes the Red Underlines) ---
+// --- TYPES ---
 interface Order {
   id: string;
   tracking: string;
@@ -34,6 +34,18 @@ const INFLUENCERS = [
     outfits: [
       "https://gateway.pinata.cloud/ipfs/bafybeiaxa75frhtavwvbg2suakgfbdbkd5gy6a3hkcqpbkcp4wdtwg5zoa",
       "https://gateway.pinata.cloud/ipfs/bafybeihypze6geh7gp7zkqf6qhcchvd6e3rvkztqzc6jehct7n4fa32xji"
+    ]
+  },
+  {
+    id: "ronaldo",
+    name: "Cristiano Ronaldo",
+    description: "Footballer & Global Icon",
+    avatar: "https://gateway.pinata.cloud/ipfs/bafybeiejwwyfbj7qnnzah2o36xg6q36vnbtb355agzgxn4vlavsvwkbx6m",
+    fabric: "Dri-Fit Performance Mesh",
+    fit: "Athletic / Sporty",
+    outfits: [
+      "https://gateway.pinata.cloud/ipfs/bafybeici3mbe2b5er5ycjz34slsz72lvf5rhhajtftrpi4emfithdw4pf4",
+      "https://gateway.pinata.cloud/ipfs/bafybeidr5ehpkoqt4s2uk5j6doa7qftgndussmizniuoq6s75ucs564syi"
     ]
   },
   {
@@ -99,7 +111,7 @@ export default function Home() {
   const [currentImage, setCurrentImage] = useState<string>("");
   const [trackingNumber, setTrackingNumber] = useState<string>("");
   
-  // ORDERS STATE (Now properly typed!)
+  // ORDERS STATE
   const [orders, setOrders] = useState<Order[]>([]); 
   
   // UI OVERLAY STATE
@@ -171,7 +183,7 @@ export default function Home() {
   };
 
   const confirmPurchase = async () => {
-    if (!wallet) return alert("Wallet disconnected");
+    if (!wallet) return alert("Wallet disconnected"); 
     if (!shippingDetails.name || !shippingDetails.address) return alert("Please fill in shipping details");
     
     const program = getProgram();
